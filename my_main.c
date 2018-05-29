@@ -256,6 +256,18 @@ void my_main() {
   clear_screen( t );
   clear_zbuffer(zb);
 
+  first_pass();
+  struct vary_nodes** knobs = second_pass();
+
+  int f;
+  for(f = 0; f < num_frames; f++){
+    struct vary_node* curr = knobs[f];
+    while(curr != NULL){
+       set_value(lookup_symbol(curr->name),curr->value);
+       curr = curr->next;
+    }
+
+    
   for (i=0;i<lastop;i++) {
     //printf("%d: ",i);
     switch (op[i].opcode)
@@ -426,4 +438,19 @@ void my_main() {
       } //end opcode switch
     printf("\n");
   }//end operation loop
+  
+  char gif[255];
+  sprintf(gif,"anim/%s%03d",name,f);
+  
+  save_extension(t,gif);
+
+  free_stack(systems);
+  systems = new_stack();
+  tmp->lastcol = 0;
+  clear_screen(t);
+  clear_zbuffer(zb);
+	  
+  }
+
+  make_animation(name);
 }
