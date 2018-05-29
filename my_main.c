@@ -72,6 +72,36 @@ void first_pass() {
   extern int num_frames;
   extern char name[128];
 
+  num_frames = 0;
+  int name_set = 0;
+  char default_name[] = "udumb";
+  int i;
+
+  for (i = 0; i < lastop; i++){
+    
+    switch (op[i].opcode){
+
+    case VARY:
+      if(num_frames == 0){
+	//printf("No Frames Set\n");
+	exit(0);
+      }
+      break;
+
+    case FRAMES:
+      num_frames = op[i].op.frames.num_frames;
+      if (name_set == 0){
+	printf("Basename not set, set to:\t %s\n", default_name);
+	strcpy(name, default_name);
+      }
+      break;
+
+    case BASENAME:
+      strcpy(name, op[i].op.basename.p->name);
+      name_set = 1;
+      break;
+    }
+  }
 }
 
 /*======== struct vary_node ** second_pass() ==========
@@ -94,7 +124,31 @@ void first_pass() {
   appropirate value.
   ====================*/
 struct vary_node ** second_pass() {
-  return NULL;
+  struct vary_node ** llist = calloc(num_frames, sizeof(struct vary_node));
+
+  int i;
+  for(i = 0; i < lastop; i++){
+    if (op[i].opcode == VARY){
+      
+      int sframe = op[i].op.vary.start_frame;
+      int eframe = op[i].op.vary.end_frame;
+      double sval = op[i].op.vary.start_val;
+      double eval = op[i].op.vary.end_val;
+
+      double d = (eval-sval) / (eframe-sframe);
+
+      int f;
+      for(f = sframe; f <= eframe; f++){
+	struct vary_node* new = (struct vary_node*)malloc(sizeof(struct vary_node));
+	strcpy(new->name,op[i].op.vary.p->name);
+	new->value = sval + d*(f-sframe);
+	new->next = llist[f];
+	llist[f] = new;
+      }
+    }
+  }
+
+  return llist;
 }
 
 /*======== void print_knobs() ==========
